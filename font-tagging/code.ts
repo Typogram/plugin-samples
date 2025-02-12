@@ -1,3 +1,4 @@
+// code.ts
 interface Rectangle {
   x: number;
   y: number;
@@ -5,12 +6,12 @@ interface Rectangle {
   height: number;
 }
 
-figma.showUI(__html__, { width: 300, height: 400 });
-
 interface OverlapResult {
   artboardName: string;
   overlappingWith: string[];
 }
+
+figma.showUI(__html__, { width: 300, height: 400 });
 
 // Check if two rectangles overlap
 function checkOverlap(rect1: Rectangle, rect2: Rectangle): boolean {
@@ -32,35 +33,46 @@ function getNodeBounds(node: SceneNode): Rectangle {
   };
 }
 
-// Main function to find overlapping artboards
-function findOverlappingArtboards(
+// Check if a node is a stamp (assuming stamps are instances with a specific name or property)
+function isStamp(node: SceneNode): boolean {
+  // Modify this condition based on how you identify stamps in your Figma file
+  // For example, if stamps have a specific name pattern:
+  return node.name.includes("Thumbs up");
+  // Or if they're instances of a specific component:
+  // return node.type === 'INSTANCE' && node.name.includes('Stamp');
+}
+
+// Main function to find frames overlapping with stamps
+function findFramesOverlappingWithStamps(
   parentNode: FrameNode | SectionNode
 ): OverlapResult[] {
   const results: OverlapResult[] = [];
+
+  // Get all child frames
   const childFrames = parentNode.children.filter(
     (child) => child.type === "FRAME"
   ) as FrameNode[];
 
-  // Compare each frame with every other frame
-  for (let i = 0; i < childFrames.length; i++) {
-    const currentFrame = childFrames[i];
-    const overlappingWith: string[] = [];
+  // Get all stamps within the parent
+  const stamps = parentNode.findAll((node) => isStamp(node));
+  console.log(stamps);
 
-    for (let j = 0; j < childFrames.length; j++) {
-      if (i !== j) {
-        const otherFrame = childFrames[j];
-        if (
-          checkOverlap(getNodeBounds(currentFrame), getNodeBounds(otherFrame))
-        ) {
-          overlappingWith.push(otherFrame.name);
-        }
+  // Check each frame against all stamps
+  for (const frame of childFrames) {
+    const overlappingStamps: string[] = [];
+    const frameBounds = getNodeBounds(frame);
+
+    for (const stamp of stamps) {
+      const stampBounds = getNodeBounds(stamp);
+      if (checkOverlap(frameBounds, stampBounds)) {
+        overlappingStamps.push(stamp.name);
       }
     }
 
-    if (overlappingWith.length > 0) {
+    if (overlappingStamps.length > 0) {
       results.push({
-        artboardName: currentFrame.name,
-        overlappingWith,
+        artboardName: frame.name,
+        overlappingWith: overlappingStamps,
       });
     }
   }
@@ -76,7 +88,7 @@ figma.ui.onmessage = (msg) => {
     if (selection.length !== 1) {
       figma.ui.postMessage({
         type: "error",
-        message: "Please select exactly one parent frame",
+        message: "Please select exactly one parent frame or section",
       });
       return;
     }
@@ -90,10 +102,10 @@ figma.ui.onmessage = (msg) => {
       return;
     }
 
-    const overlappingArtboards = findOverlappingArtboards(selectedNode);
+    const overlappingFrames = findFramesOverlappingWithStamps(selectedNode);
     figma.ui.postMessage({
       type: "results",
-      results: overlappingArtboards,
+      results: overlappingFrames,
     });
   }
 };
