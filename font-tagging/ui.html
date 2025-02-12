@@ -1,0 +1,86 @@
+<html>
+
+  <head>
+    <style>
+      body {
+        font: 12px sans-serif;
+        padding: 20px;
+      }
+
+      button {
+        background: #18A0FB;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 6px;
+        margin-bottom: 15px;
+      }
+
+      .error {
+        color: #F24822;
+        margin-bottom: 10px;
+      }
+
+      .result-item {
+        margin-bottom: 15px;
+        padding: 10px;
+        background: #F5F5F5;
+        border-radius: 4px;
+      }
+
+      .overlap-list {
+        margin-top: 5px;
+        margin-left: 15px;
+        color: #666;
+      }
+    </style>
+  </head>
+
+  <body>
+    <button id="checkButton">Check for Overlaps</button>
+    <div id="error"
+         class="error"
+         style="display: none;"></div>
+    <div id="results"></div>
+
+    <script>
+      document.getElementById('checkButton').onclick = () => {
+        parent.postMessage({ pluginMessage: { type: 'check-overlaps' } }, '*');
+      };
+
+      window.onmessage = (event) => {
+        const msg = event.data.pluginMessage;
+        const errorDiv = document.getElementById('error');
+        const resultsDiv = document.getElementById('results');
+
+        if (msg.type === 'error') {
+          errorDiv.textContent = msg.message;
+          errorDiv.style.display = 'block';
+          resultsDiv.innerHTML = '';
+        }
+        else if (msg.type === 'results') {
+          errorDiv.style.display = 'none';
+          resultsDiv.innerHTML = '';
+
+          if (msg.results.length === 0) {
+            resultsDiv.innerHTML = '<p>No overlapping artboards found.</p>';
+            return;
+          }
+
+          msg.results.forEach(result => {
+            const resultItem = document.createElement('div');
+            resultItem.className = 'result-item';
+            resultItem.innerHTML = `
+              <strong>${result.artboardName}</strong> overlaps with:
+              <div class="overlap-list">
+                ${result.overlappingWith.join('<br>')}
+              </div>
+            `;
+            resultsDiv.appendChild(resultItem);
+          });
+        }
+      };
+    </script>
+  </body>
+
+</html>
