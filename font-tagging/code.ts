@@ -1,4 +1,3 @@
-// code.ts
 interface Rectangle {
   x: number;
   y: number;
@@ -33,18 +32,15 @@ function getNodeBounds(node: SceneNode): Rectangle {
   };
 }
 
-// Check if a node is a stamp (assuming stamps are instances with a specific name or property)
-function isStamp(node: SceneNode): boolean {
-  // Modify this condition based on how you identify stamps in your Figma file
-  // For example, if stamps have a specific name pattern:
-  return node.name.includes("Thumbs up");
-  // Or if they're instances of a specific component:
-  // return node.type === 'INSTANCE' && node.name.includes('Stamp');
+// Check if a node is a stamp with specific name
+function isStamp(node: SceneNode, stampName: string): boolean {
+  return node.name.toLowerCase() === stampName.toLowerCase();
 }
 
 // Main function to find frames overlapping with stamps
 function findFramesOverlappingWithStamps(
-  parentNode: FrameNode | SectionNode
+  parentNode: FrameNode | SectionNode,
+  stampName: string
 ): OverlapResult[] {
   const results: OverlapResult[] = [];
 
@@ -54,8 +50,7 @@ function findFramesOverlappingWithStamps(
   ) as FrameNode[];
 
   // Get all stamps within the parent
-  const stamps = parentNode.findAll((node) => isStamp(node));
-  console.log(stamps);
+  const stamps = parentNode.findAll((node) => isStamp(node, stampName));
 
   // Check each frame against all stamps
   for (const frame of childFrames) {
@@ -102,7 +97,18 @@ figma.ui.onmessage = (msg) => {
       return;
     }
 
-    const overlappingFrames = findFramesOverlappingWithStamps(selectedNode);
+    const stampName = msg.stampName;
+    if (!stampName) {
+      figma.ui.postMessage({
+        type: "error",
+        message: "Please enter a stamp name",
+      });
+      return;
+    }
+    const overlappingFrames = findFramesOverlappingWithStamps(
+      selectedNode,
+      stampName
+    );
     figma.ui.postMessage({
       type: "results",
       results: overlappingFrames,
