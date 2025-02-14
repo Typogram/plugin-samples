@@ -57,6 +57,10 @@
         background: #E5E5E5;
         color: black;
       }
+
+      .secondary-button {
+        background: #4CAF50;
+      }
     </style>
   </head>
 
@@ -66,6 +70,8 @@
              id="stampName"
              placeholder="Enter stamp name" />
     </div>
+    <button id="bringToFrontButton"
+            class="secondary-button">Bring Matching Layers to Front</button>
     <button id="checkButton">Check for Overlaps</button>
     <div id="error"
          class="error"
@@ -83,6 +89,16 @@
         parent.postMessage({
           pluginMessage: {
             type: 'check-overlaps',
+            stampName: stampName
+          }
+        }, '*');
+      };
+
+      document.getElementById('bringToFrontButton').onclick = () => {
+        const stampName = document.getElementById('stampName').value.trim();
+        parent.postMessage({
+          pluginMessage: {
+            type: 'bring-to-front',
             stampName: stampName
           }
         }, '*');

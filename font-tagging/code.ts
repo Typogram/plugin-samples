@@ -37,6 +37,43 @@ function isStamp(node: SceneNode, stampName: string): boolean {
   return node.name.toLowerCase() === stampName.toLowerCase();
 }
 
+// Find all matching layers and bring them to front
+function bringMatchingLayersToFront(stampName: string) {
+  // Get all nodes in the current page
+  const allNodes = figma.currentPage.findAll();
+
+  // Filter nodes that match the stamp name
+  const matchingNodes = allNodes.filter((node) => isStamp(node, stampName));
+
+  const logs = [];
+  // Process each matching node
+  for (const node of matchingNodes) {
+    // Check if node has a parent that is a FRAME
+    if (node.parent && node.parent.type === "FRAME") {
+      logs.push(`Layer "${node.name}" has parent frame: "${node.parent.name}"`);
+      continue; // Skip nodes with frame parents
+    }
+
+    // Bring the node to front by making it the last child of its parent
+    if (node.parent) {
+      node.parent.appendChild(node);
+    }
+  }
+
+  // Send feedback to UI
+  figma.ui.postMessage({
+    type: "results",
+    results: [
+      {
+        artboardName: `Processed ${matchingNodes.length} layers. ${logs.join(
+          ", "
+        )}`,
+        overlappingWith: [],
+      },
+    ],
+  });
+}
+
 // Main function to find frames overlapping with stamps
 function findFramesOverlappingWithStamps(
   parentNode: FrameNode | SectionNode,
@@ -113,5 +150,15 @@ figma.ui.onmessage = (msg) => {
       type: "results",
       results: overlappingFrames,
     });
+  } else if (msg.type === "bring-to-front") {
+    const stampName = msg.stampName;
+    if (!stampName) {
+      figma.ui.postMessage({
+        type: "error",
+        message: "Please enter a stamp name",
+      });
+      return;
+    }
+    bringMatchingLayersToFront(stampName);
   }
 };
