@@ -1,6 +1,6 @@
 {
-  "name": "Overlap Detector",
-  "id": "overlap-detector-plugin",
+  "name": "Typogram Font Tagging",
+  "id": "typogram-font-tagging",
   "api": "1.0.0",
   "main": "code.js",
   "ui": "ui.html",
