@@ -134,7 +134,7 @@
           }
 
           // Join frame names with commas and show in textarea
-          resultsDiv.value = overlappingFrames.join(',');
+          resultsDiv.value = JSON.stringify(overlappingFrames);
           countDiv.textContent = `${overlappingFrames.length} frames found`;
         }
       };

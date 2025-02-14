@@ -117,19 +117,23 @@ figma.ui.onmessage = (msg) => {
   if (msg.type === "check-overlaps") {
     const selection = figma.currentPage.selection;
 
-    if (selection.length !== 1) {
+    if (selection.length === 0) {
       figma.ui.postMessage({
         type: "error",
-        message: "Please select exactly one parent frame or section",
+        message: "Please select at least one frame or section",
       });
       return;
     }
 
-    const selectedNode = selection[0];
-    if (selectedNode.type !== "FRAME" && selectedNode.type !== "SECTION") {
+    // Filter out invalid selections
+    const validNodes = selection.filter(
+      (node) => node.type === "FRAME" || node.type === "SECTION"
+    );
+
+    if (validNodes.length === 0) {
       figma.ui.postMessage({
         type: "error",
-        message: "Selected item must be a frame or section",
+        message: "Selected items must be frames or sections",
       });
       return;
     }
@@ -142,13 +146,18 @@ figma.ui.onmessage = (msg) => {
       });
       return;
     }
-    const overlappingFrames = findFramesOverlappingWithStamps(
-      selectedNode,
-      stampName
-    );
+
+    // Process each node individually and combine results at the end
+    let allResults = [];
+    for (const node of validNodes) {
+      const results = findFramesOverlappingWithStamps(node, stampName);
+      allResults = allResults.concat(results);
+    }
+
+    // Send combined results in one message
     figma.ui.postMessage({
       type: "results",
-      results: overlappingFrames,
+      results: allResults,
     });
   } else if (msg.type === "bring-to-front") {
     const stampName = msg.stampName;
